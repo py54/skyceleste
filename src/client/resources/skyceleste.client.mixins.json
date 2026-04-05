@@ -1,0 +1,19 @@
+{
+    "required": true,
+    "package": "com.skyceleste.client.mixin",
+    "compatibilityLevel": "JAVA_21",
+    "client": [
+        "AbstractContainerScreenMixin",
+        "ExampleClientMixin",
+        "GameRendererMixin",
+        "LightTextureMixin",
+        "MouseHandlerMixin",
+        "PauseScreenMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    },
+    "overwrites": {
+        "requireAnnotations": true
+    }
+}
