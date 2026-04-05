@@ -23,10 +23,5 @@ public class MouseHandlerMixin {
             ci.cancel();
             return;
         }
-
-        if (minecraft.screen != null && FeatureRegistry.SCROLLABLE_TOOLTIPS.shouldCaptureScroll()) {
-            FeatureRegistry.SCROLLABLE_TOOLTIPS.scrollBy(verticalOffset);
-            ci.cancel();
-        }
     }
 }

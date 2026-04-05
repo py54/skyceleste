@@ -19,12 +19,10 @@ public class FeatureRegistry {
 
     public static final Zoom ZOOM = new Zoom();
     public static final FullBright FULLBRIGHT = new FullBright();
-    public static final ScrollableTooltips SCROLLABLE_TOOLTIPS = new ScrollableTooltips();
 
     public static final List<Feature> FEATURES = List.<Feature>of(
             ZOOM,
-            FULLBRIGHT,
-            SCROLLABLE_TOOLTIPS);
+            FULLBRIGHT);
 
     public static void registerKeyBindings() {
         for (Feature feature : FEATURES) {
