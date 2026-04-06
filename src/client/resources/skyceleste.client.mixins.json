@@ -3,10 +3,12 @@
     "package": "com.skyceleste.client.mixin",
     "compatibilityLevel": "JAVA_21",
     "client": [
+        "ChatComponentMixin",
         "ExampleClientMixin",
         "GameRendererMixin",
         "LightTextureMixin",
         "MouseHandlerMixin",
+        "OverlayTextureMixin",
         "PauseScreenMixin"
     ],
     "injectors": {

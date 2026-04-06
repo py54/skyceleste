@@ -19,10 +19,14 @@ public class FeatureRegistry {
 
     public static final Zoom ZOOM = new Zoom();
     public static final FullBright FULLBRIGHT = new FullBright();
+    public static final HitColor HIT_COLOR = new HitColor();
+    public static final InfiniteChat INFINITE_CHAT = new InfiniteChat();
 
     public static final List<Feature> FEATURES = List.<Feature>of(
             ZOOM,
-            FULLBRIGHT);
+            FULLBRIGHT,
+            HIT_COLOR,
+            INFINITE_CHAT);
 
     public static void registerKeyBindings() {
         for (Feature feature : FEATURES) {

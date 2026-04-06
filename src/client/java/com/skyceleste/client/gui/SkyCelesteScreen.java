@@ -34,7 +34,7 @@ public class SkyCelesteScreen extends Screen {
     private static final int SIDEBAR_MAX_W = 168;
     private static final int CARD_MIN_W = 170;
     private static final int CARD_MAX_W = 260;
-    private static final int CARD_H = 60;
+    private static final int CARD_H = 75;
     private static final int GRID_GAP = 8;
     private static final int CONTENT_PAD = 10;
     private static final int SCROLL_STEP = 24;
@@ -132,6 +132,9 @@ public class SkyCelesteScreen extends Screen {
         }
     }
 
+    private int activeDragSlider = -1;
+    private FeatureRegistry.Feature activeDragFeature = null;
+
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (event.button() == 0) {
@@ -152,6 +155,46 @@ public class SkyCelesteScreen extends Screen {
                     return true;
                 }
 
+                if (visible.get(i) == FeatureRegistry.HIT_COLOR) {
+                    com.skyceleste.client.features.HitColor hc = (com.skyceleste.client.features.HitColor) visible.get(i);
+                    int previewW = 30;
+                    int previewX = cx + 8;
+                    int previewY = cy + 34; // color box
+                    int previewH = 18;
+                    
+                    int resetY = cy + 54;
+                    int resetH = 12;
+
+                    // Block toggle if clicking color box
+                    if (mouseX >= previewX && mouseX < previewX + previewW && mouseY >= previewY && mouseY < previewY + previewH) {
+                        return true;
+                    }
+                    
+                    // Reset click
+                    if (mouseX >= previewX && mouseX < previewX + previewW && mouseY >= resetY && mouseY < resetY + resetH) {
+                        hc.r = 255;
+                        hc.g = 0;
+                        hc.b = 0;
+                        com.skyceleste.client.utils.HitColorHelper.updateColorConfig();
+                        FeatureRegistry.saveStates();
+                        return true;
+                    }
+                    
+                    int sliderY = cy + 34;
+                    int sliderX = cx + 64;
+                    int sliderWidth = Math.max(l.cardW() - 75, 40);
+                    
+                    for (int s = 0; s < 3; s++) {
+                        int y = sliderY + s * 12;
+                        if (mouseX >= sliderX && mouseX < sliderX + sliderWidth && mouseY >= y && mouseY < y + 8) {
+                            activeDragSlider = s;
+                            activeDragFeature = visible.get(i);
+                            updateSliderValue((com.skyceleste.client.features.HitColor) visible.get(i), s, mouseX, sliderX, sliderWidth);
+                            return true;
+                        }
+                    }
+                }
+
                 if (mouseX >= cx && mouseX < cx + l.cardW() && mouseY >= cy && mouseY < cy + l.cardH()) {
                     awaitingZoomKey = false;
                     visible.get(i).toggle();
@@ -162,6 +205,43 @@ public class SkyCelesteScreen extends Screen {
         }
 
         return super.mouseClicked(event, doubleClick);
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        if (event.button() == 0 && activeDragSlider >= 0 && activeDragFeature instanceof com.skyceleste.client.features.HitColor hc) {
+            Layout l = layout();
+            List<FeatureRegistry.Feature> visible = getVisibleFeatures();
+            int idx = visible.indexOf(hc);
+            if (idx >= 0) {
+                int col = idx % l.cols();
+                int cx = l.startX() + col * (l.cardW() + l.gapX());
+                int sliderX = cx + 64;
+                int sliderWidth = Math.max(l.cardW() - 75, 40);
+                updateSliderValue(hc, activeDragSlider, event.x(), sliderX, sliderWidth);
+                return true;
+            }
+        }
+        return super.mouseDragged(event, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() == 0 && activeDragSlider >= 0) {
+            activeDragSlider = -1;
+            activeDragFeature = null;
+            FeatureRegistry.saveStates();
+            return true;
+        }
+        return super.mouseReleased(event);
+    }
+
+    private void updateSliderValue(com.skyceleste.client.features.HitColor feat, int component, double mouseX, int sliderX, int sliderWidth) {
+        int newVal = (int) Math.max(0, Math.min(255, ((mouseX - sliderX) / sliderWidth) * 255));
+        if (component == 0) feat.r = newVal;
+        else if (component == 1) feat.g = newVal;
+        else if (component == 2) feat.b = newVal;
+        com.skyceleste.client.utils.HitColorHelper.updateColorConfig();
     }
 
     @Override
@@ -211,7 +291,7 @@ public class SkyCelesteScreen extends Screen {
         g.fill(0, 0, l.sideW(), h, SIDEBAR_BG);
 
         g.drawString(this.font, "SkyCeleste", 8, 10, ACCENT, false);
-        g.drawString(this.font, "v0.0.1", 8, 20, TEXT_GRAY, false);
+        g.drawString(this.font, "v0.0.2", 8, 20, TEXT_GRAY, false);
 
         for (int i = 0; i < SIDEBAR_ITEMS.size(); i++) {
             String item = SIDEBAR_ITEMS.get(i);
@@ -269,10 +349,52 @@ public class SkyCelesteScreen extends Screen {
                 int kbBg = awaitingZoomKey ? 0xFF3F5675 : (kbHover ? 0xFF384A66 : 0xFF2D3E58);
                 g.fill(kbX1, kbY1, kbX2, kbY2, kbBg);
                 g.drawString(this.font, keybindText, kbX1 + 4, kbY1 + 3, TEXT_WHITE, false);
+            } else if (feat == FeatureRegistry.HIT_COLOR) {
+                com.skyceleste.client.features.HitColor hc = (com.skyceleste.client.features.HitColor) feat;
+                int previewW = 30;
+                int previewX = cx + 8;
+                int previewY = cy + 34;
+                int previewH = 18;
+
+                int previewColor = (0xFF000000 | (hc.r << 16) | (hc.g << 8) | hc.b);
+                g.fill(previewX, previewY, previewX + previewW, previewY + previewH, previewColor);
+                g.fill(previewX - 1, previewY - 1, previewX + previewW + 1, previewY, TEXT_GRAY);
+                g.fill(previewX - 1, previewY + previewH, previewX + previewW + 1, previewY + previewH + 1, TEXT_GRAY);
+                g.fill(previewX - 1, previewY - 1, previewX, previewY + previewH + 1, TEXT_GRAY);
+                g.fill(previewX + previewW, previewY - 1, previewX + previewW + 1, previewY + previewH + 1, TEXT_GRAY);
+
+                int resetY = cy + 54;
+                int resetH = 12;
+                boolean resetHover = mouseX >= previewX && mouseX < previewX + previewW && mouseY >= resetY && mouseY < resetY + resetH;
+                g.fill(previewX, resetY, previewX + previewW, resetY + resetH, resetHover ? 0xFF384A66 : 0xFF2D3E58);
+                // "Reset" text (width ~26px), so center it manually inside the 30px width box
+                g.drawString(this.font, "Reset", previewX + 2, resetY + 2, TEXT_WHITE, false);
+
+                int sliderY = cy + 34;
+                int sliderX = cx + 64;
+                int sliderWidth = Math.max(l.cardW() - 75, 40);
+                
+                for (int s = 0; s < 3; s++) {
+                    int y = sliderY + s * 12;
+                    int color = s == 0 ? 0xFFFF4444 : (s == 1 ? 0xFF44FF44 : 0xFF4444FF);
+                    String label = s == 0 ? "R" : (s == 1 ? "G" : "B");
+                    int val = s == 0 ? hc.r : (s == 1 ? hc.g : hc.b);
+                    
+                    g.fill(sliderX - 1, y - 1, sliderX + sliderWidth + 1, y + 9, TEXT_GRAY); // Border background
+                    g.fill(sliderX, y, sliderX + sliderWidth, y + 8, 0xFF1A1A1A); // Dark track background
+                    int fillWidth = (int) (sliderWidth * (val / 255.0f));
+                    g.fill(sliderX, y, sliderX + fillWidth, y + 8, color); // Filled track
+                    g.drawString(this.font, label + ":", sliderX - 14, y + 1, TEXT_WHITE, false);
+                    
+                    if (mouseX >= sliderX && mouseX < sliderX + sliderWidth && mouseY >= y && mouseY < y + 8) {
+                        g.fill(sliderX, y - 1, sliderX + sliderWidth, y + 0, ACCENT);
+                        g.fill(sliderX, y + 8, sliderX + sliderWidth, y + 9, ACCENT);
+                    }
+                }
             }
 
             int pillX = cx + l.cardW() - 38;
-            int pillY = cy + l.cardH() - 18;
+            int pillY = feat == FeatureRegistry.HIT_COLOR ? cy + 8 : cy + l.cardH() - 18;
             g.fill(pillX, pillY, pillX + 30, pillY + 10, on ? GREEN : RED);
             g.drawString(this.font, on ? "ON" : "OFF", pillX + 4, pillY + 1, TEXT_WHITE, false);
         }
